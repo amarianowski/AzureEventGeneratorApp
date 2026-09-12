@@ -4,7 +4,26 @@ on:
     workflow_dispatch: 
 
 jobs:
+    deploy-infrastructure:
+        name: Deploy Infrastructure
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - uses: dorny/paths-filter@v3
+              id: filter
+              with:
+                base: main
+                filters: |
+                    infrastructure:
+                        - 'AzureEventGeneratorApp.Infrastructure/**'
+            - name: Deploy Bicep
+              if: steps.filter.outputs.infrastructure == 'true'
+              shell: pwsh
+              run: ./AzureEventGeneratorApp.Infrastructure/Start-InfrastructureDeployment.ps1
     event-generator-build:
+        name: Build event generator service
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -16,3 +35,17 @@ jobs:
               run: dotnet restore EventGenerator.Service/EventGenerator.Service.csproj
             - name: Build
               run: dotnet build EventGenerator.Service/EventGenerator.Service.csproj --configuration Release --no-restore
+    event-processor-build:
+        name: Build event processor service
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                dotnet-version: '10.0.x'
+            - name: Restore dependencies
+              run: dotnet restore EventProcessorApi.Service/EventProcessorApi.Service.csproj
+            - name: Build
+              run: dotnet build EventProcessorApi.Service/EventProcessorApi.Service.csproj --configuration Release --no-restore
+    
