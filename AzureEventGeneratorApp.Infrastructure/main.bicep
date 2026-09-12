@@ -29,3 +29,5 @@ resource component 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: logAnalyticsWorkspace.id
   }
 }
+
+output appInsightsConnectionString string = component.properties.ConnectionString
