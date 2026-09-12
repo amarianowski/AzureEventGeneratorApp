@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AzureEventGeneratorApp.Contracts/AzureEventGeneratorApp.Contracts.csproj" />
+  <Project Path="EventGenerator.Service/EventGenerator.Service.csproj" />
+  <Project Path="EventProcessorApi.Service/EventProcessorApi.Service.csproj" />
+</Solution>
