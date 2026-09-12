@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using AzureEventGeneratorApp.Contracts;
 
 namespace EventGenerator.Service;
@@ -34,17 +35,33 @@ public class Worker(ILogger<Worker> logger, IHttpClientFactory httpClientFactory
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var client = httpClientFactory.CreateClient("EventProcessorApi");
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var telemetryEvent = new TelemetryReading{
+            var telemetryEvent = new TelemetryReading
+            {
                 StationId = GenerateStationId(),
                 Timestamp = DateTimeOffset.UtcNow,
                 TemperatureCelsius = GenerateTemperatureCelsius(),
                 WindSpeedMps = GenerateWindSpeedMps(),
-                BatteryVoltage = GenerateBatteryVoltage()   
-            };  
+                BatteryVoltage = GenerateBatteryVoltage()
+            };
 
-            logger.LogInformation($"Generated telemetry event: {telemetryEvent.StationId}, {telemetryEvent.Timestamp}, {telemetryEvent.TemperatureCelsius}°C, {telemetryEvent.WindSpeedMps} m/s, {telemetryEvent.BatteryVoltage} V");
+            try
+            {
+                var response = await client.PostAsJsonAsync("/telemetry", telemetryEvent, stoppingToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send telemetry event: {response.StatusCode} - {response.ReasonPhrase}");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred while sending telemetry event");
+            }
+
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
         }
     }
